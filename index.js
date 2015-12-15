@@ -2,6 +2,9 @@ var io = require('socket.io')();
 var onlineUsers = {};
 var onlineCount = 0;
 
+io.set('authorization', function(hand, callback){
+    console.log(hand.headers.cookie);
+});
 io.on('connection', function(socket, obj){
     socket.on('disconnect', function(){
         if (onlineUsers.hasOwnProperty(socket.name)) {
