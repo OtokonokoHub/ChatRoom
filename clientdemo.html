@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+</head>
+<body>
+<button type="">aaaa</button>
+<script src="http://lib.sinaapp.com/js/jquery/1.9.1/jquery-1.9.1.min.js"></script>
+<script src="http://localhost:3000/socket.io/socket.io.js"></script>
+<script type="text/javascript" charset="utf-8">
+    jQuery(document).ready(function($) {
+        socket = io.connect('http://localhost:3000', {userId:1, userName:'111', content:'asdasdasd'});
+        socket.on('message', function(data){
+            console.log(data);
+        });
+        $('button').click(function(event) {
+            socket.send({userId:1, userName:'111', content:'asdasdasd'});
+        });
+    });
+</script>
+</body>
+</html>
