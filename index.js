@@ -1,22 +1,23 @@
 var io = require('socket.io')();
 var onlineUsers = {};
-var onlineCount = 0;
 
 io.set('authorization', function(hand, callback){
-    console.log(hand.headers.cookie);
+    return callback(null, true);
 });
-io.on('connection', function(socket, obj){
+io.on('connection', function(socket){
+    onlineUsers[socket.id] = {};
+    socket.on('addRoom', function(data){
+        socket.join(data.roomName);
+        onlineUsers[socket.id].roomName = data.roomName;
+    });
     socket.on('disconnect', function(){
-        if (onlineUsers.hasOwnProperty(socket.name)) {
-            var obj = {userId:socket.name, userName:onlineUsers[socket.name]};
-            delete onlineUsers[socket.name];
-            onlineCount--;
-            io.emit('logout', {onlineUsers:onlineUsers, onlineCount:onlineCount, user:obj});
+        if (onlineUsers.hasOwnProperty(socket.id)) {
+            delete onlineUsers[socket.id];
+            io.emit('logout', null);
         };
     });
-    socket.on('message', function(obj){
-        io.emit('message', obj.content);
-        console.log(obj.userName+'说：'+obj.content);
+    socket.on('message', function(obj, obj2){
+        io.sockets.in(onlineUsers[socket.id].roomName).emit('message', obj);
     });
 });
 io.listen(3000);

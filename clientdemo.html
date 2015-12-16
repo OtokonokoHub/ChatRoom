@@ -1,20 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
     <title></title>
 </head>
 <body>
-<button type="">aaaa</button>
-<script src="http://lib.sinaapp.com/js/jquery/1.9.1/jquery-1.9.1.min.js"></script>
-<script src="http://localhost:3000/socket.io/socket.io.js"></script>
+姓名:<input type="text" name="name" value=""><br>
+内容:<textarea name="content"></textarea><br>
+<button type="">aaaa</button><br>
+<div id="content">
+    
+</div>
+
+<script src="http://im.otohub.moe/jquery-1.11.3.min.js"></script>
+<script src="http://im.otohub.moe:3000/socket.io/socket.io.js"></script>
 <script type="text/javascript" charset="utf-8">
     jQuery(document).ready(function($) {
-        socket = io.connect('http://localhost:3000', {userId:1, userName:'111', content:'asdasdasd'});
+        socket = io.connect('http://im.otohub.moe:3000');
+        socket.emit('addRoom', {roomName:'group3'});
         socket.on('message', function(data){
+            var name = '匿名';
+            if (data.hasOwnProperty('userName') && data.userName != '') {
+                name = data.userName; 
+            };
             console.log(data);
+            $('#content').append(name + ": " + data.content + "<br>");
         });
         $('button').click(function(event) {
-            socket.send({userId:1, userName:'111', content:'asdasdasd'});
+            var name    = $('[name=name]').val();
+            var content = $('[name=content]').val();
+            socket.emit('message', {"userName":name, "content":content});
         });
     });
 </script>
