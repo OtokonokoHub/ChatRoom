@@ -12,11 +12,11 @@
     
 </div>
 
-<script src="http://im.otohub.moe/jquery-1.11.3.min.js"></script>
-<script src="http://im.otohub.moe:3000/socket.io/socket.io.js"></script>
+<script src="http://test.otohub.moe/jquery-1.11.3.min.js"></script>
+<script src="http://test.otohub.moe:3000/socket.io/socket.io.js"></script>
 <script type="text/javascript" charset="utf-8">
     jQuery(document).ready(function($) {
-        socket = io.connect('http://im.otohub.moe:3000');
+        socket = io.connect('http://test.otohub.moe:3000');
         socket.emit('addRoom', {roomName:'group3'});
         socket.on('message', function(data){
             var name = '匿名';

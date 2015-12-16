@@ -1,6 +1,13 @@
-var io = require('socket.io')();
+var io          = require('socket.io')();
+var xss         = require('xss');
 var onlineUsers = {};
-
+var xssOption   ={
+    whiteList:{
+        img:['src', 'alt'],
+        a:['href', 'title']
+    }
+};
+                                
 io.set('authorization', function(hand, callback){
     return callback(null, true);
 });
@@ -16,7 +23,11 @@ io.on('connection', function(socket){
             io.emit('logout', null);
         };
     });
-    socket.on('message', function(obj, obj2){
+    socket.on('message', function(obj){
+        for (var key in obj) {
+            obj[key] = xss(obj[key], xssOption);
+        };
+
         io.sockets.in(onlineUsers[socket.id].roomName).emit('message', obj);
     });
 });
