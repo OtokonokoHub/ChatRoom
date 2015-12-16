@@ -1,5 +1,7 @@
 var io          = require('socket.io')();
 var xss         = require('xss');
+var groups      = require('./groups.json');
+var errCodes    = require('./error_code.json');
 var onlineUsers = {};
 var xssOption   ={
     whiteList:{
@@ -8,14 +10,26 @@ var xssOption   ={
     }
 };
                                 
-io.set('authorization', function(hand, callback){
+io.set('authorization', function(socket, callback){
     return callback(null, true);
 });
-io.on('connection', function(socket){
+io.on('connection', function(socket, callback){
     onlineUsers[socket.id] = {};
     socket.on('addRoom', function(data){
-        socket.join(data.roomName);
-        onlineUsers[socket.id].roomName = data.roomName;
+        flag = false;
+        for (var i = 0; i < groups.length; i++) {
+            if (data.roomName === groups[i]) {
+                flag = true;
+                break;
+            };
+        };
+        if (flag) {
+            socket.join(data.roomName);
+            onlineUsers[socket.id].roomName = data.roomName;
+        }
+        else{
+            socket.emit('exp', errCodes['GROUP_NOT_FOUND']);
+        }
     });
     socket.on('disconnect', function(){
         if (onlineUsers.hasOwnProperty(socket.id)) {
@@ -24,10 +38,16 @@ io.on('connection', function(socket){
         };
     });
     socket.on('message', function(obj){
+        if (
+            !obj.hasOwnProperty('content')||
+            obj.content == ''
+            ) {
+            socket.emit('exp', errCodes['NOT_CONTENT']);
+            return false;
+        };
         for (var key in obj) {
             obj[key] = xss(obj[key], xssOption);
         };
-
         io.sockets.in(onlineUsers[socket.id].roomName).emit('message', obj);
     });
 });

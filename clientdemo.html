@@ -23,8 +23,10 @@
             if (data.hasOwnProperty('userName') && data.userName != '') {
                 name = data.userName; 
             };
-            console.log(data);
             $('#content').append(name + ": " + data.content + "<br>");
+        });
+        socket.on('exp', function(data){
+            alert(data);
         });
         $('button').click(function(event) {
             var name    = $('[name=name]').val();
