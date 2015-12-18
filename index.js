@@ -1,5 +1,6 @@
 var io          = require('socket.io')();
 var xss         = require('xss');
+var Memcached   = require('memcached');
 var groups      = require('./groups.json');
 var errCodes    = require('./error_code.json');
 var onlineUsers = {};
@@ -11,6 +12,9 @@ var xssOption   ={
 };
                                 
 io.set('authorization', function(socket, callback){
+    var memcached   = new Memcached('127.0.0.1:11211');
+    var session = memcached.get('aaa');
+    console.log(session);
     return callback(null, true);
 });
 io.on('connection', function(socket, callback){
