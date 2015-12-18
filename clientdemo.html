@@ -28,6 +28,9 @@
         socket.on('exp', function(data){
             alert(data);
         });
+        socket.on('connect', function(data){
+            alert(data);
+        });
         $('button').click(function(event) {
             var name    = $('[name=name]').val();
             var content = $('[name=content]').val();

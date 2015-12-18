@@ -15,6 +15,7 @@ var xssOption   ={
 };
                                 
 io.set('authorization', function(socket, callback){
+    var responseHead = socket.res._header;
     var memcached   = new Memcached('127.0.0.1:11211');
     var cookies = cookie.parse(socket.headers.cookie);
     if (!cookies.hasOwnProperty('oto_sexy')) {
@@ -22,7 +23,7 @@ io.set('authorization', function(socket, callback){
     };
     var ClientSession = cookies.oto_sexy;
     var ServerSession = memcached.get('memc.sess.key.' + ClientSession);
-    if (!ServerSession) {
+    if (!ServerSession || !ServerSession.hasOwnProperty('__id') || !ServerSession.hasOwnProperty('username')) {
         if (!cookies.hasOwnProperty('_identity')) {
             return callback(null, false);
         };
@@ -32,27 +33,29 @@ io.set('authorization', function(socket, callback){
             return callback(null, false);
         };
         var connection = mysql.createConnection(mysqlConfig);
-        var result = false;
-        var query = connection.query('SELECT COUNT(1) AS is_exists FROM `user` WHERE id = ? AND auth_key = ?', [IdentityCookie[0], IdentityCookie[1]], function(err, rows){
+        var result     = false;
+        var query      = connection.query('SELECT username,id FROM `user` WHERE id = ? AND auth_key = ?', [IdentityCookie[0], IdentityCookie[1]], function(err, rows){
+            console.log();
+            return callback(null, true);
             if (err) {
                 console.log(err);
                 return;
             };
-            if (rows[0]['is_exists'] == 1) {
-                return callback(null, true);
+            if (rows.length == 1) {
+                onlineUsers[rows[0]['id']]      = {};
+                onlineUsers[rows[0]['id']].name = rows[0]['username'];
+                return callback(rows[0]['id'], true);
             };
             return callback(null, false);
         });
         return;
     };
-    if (!ServerSession.hasOwnProperty('__id') || !ServerSession.hasOwnProperty('username')) {
-        return callback(null, false);
-    };
-    onlineUsers[socket.id] = {};
-    onlineUsers[socket.id].name = ServerSession.username;
-    return callback(null, true);
+    onlineUsers[ServerSession.__id] = {};
+    onlineUsers[ServerSession.__id].name = ServerSession.username;
+    return callback(ServerSession.__id, true);
 });
-io.on('connection', function(socket, callback){
+io.on('connection', function(socket){
+    return;
     socket.on('addRoom', function(data){
         flag = false;
         for (var i = 0; i < groups.length; i++) {
@@ -63,15 +66,16 @@ io.on('connection', function(socket, callback){
         };
         if (flag) {
             socket.join(data.roomName);
-            onlineUsers[socket.id].roomName = data.roomName;
+            console.log(onlineUsers[socket.__id]);
+            onlineUsers[socket.__id].roomName = data.roomName;
         }
         else{
             socket.emit('exp', errCodes['GROUP_NOT_FOUND']);
         }
     });
     socket.on('disconnect', function(){
-        if (onlineUsers.hasOwnProperty(socket.id)) {
-            delete onlineUsers[socket.id];
+        if (onlineUsers.hasOwnProperty(socket.__id)) {
+            delete onlineUsers[socket.__id];
             io.emit('logout', null);
         };
     });
@@ -86,8 +90,8 @@ io.on('connection', function(socket, callback){
         for (var key in obj) {
             obj[key] = xss(obj[key], xssOption);
         };
-        obj.userName = onlineUsers[socket.id].name;
-        io.sockets.in(onlineUsers[socket.id].roomName).emit('message', obj);
+        obj.userName = onlineUsers[socket.__id].name;
+        io.sockets.in(onlineUsers[socket.__id].roomName).emit('message', obj);
     });
 });
 io.listen(3000);
