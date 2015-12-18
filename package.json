@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "cookie": "^0.2.3",
     "http": "0.0.0",
     "memcached": "^2.2.1",
     "mysql": "^2.10.0",
