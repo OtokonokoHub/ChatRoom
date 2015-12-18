@@ -38,7 +38,7 @@ io.set('authorization', function(socket, callback){
         var query      = connection.query('SELECT username,id FROM `user` WHERE id = ? AND auth_key = ?', [IdentityCookie[0], IdentityCookie[1]], function(err, rows){
             if (err) {
                 console.log(err);
-                return;
+                return callback(null, false);
             };
             if (rows.length == 1) {
                 onlineUsers[socketId]      = {};
