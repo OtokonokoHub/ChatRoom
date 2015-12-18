@@ -34,6 +34,10 @@ io.set('authorization', function(socket, callback){
         var connection = mysql.createConnection(mysqlConfig);
         var result = false;
         var query = connection.query('SELECT COUNT(1) AS is_exists FROM `user` WHERE id = ? AND auth_key = ?', [IdentityCookie[0], IdentityCookie[1]], function(err, rows){
+            if (err) {
+                console.log(err);
+                return;
+            };
             if (rows[0]['is_exists'] == 1) {
                 return callback(null, true);
             };
