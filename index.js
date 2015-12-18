@@ -36,8 +36,6 @@ io.set('authorization', function(socket, callback){
         var connection = mysql.createConnection(mysqlConfig);
         var result     = false;
         var query      = connection.query('SELECT username,id FROM `user` WHERE id = ? AND auth_key = ?', [IdentityCookie[0], IdentityCookie[1]], function(err, rows){
-            console.log();
-            return callback(null, true);
             if (err) {
                 console.log(err);
                 return;
