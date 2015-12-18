@@ -16,8 +16,9 @@ var xssOption   ={
                                 
 io.set('authorization', function(socket, callback){
     var responseHead = socket.res._header;
-    var memcached   = new Memcached('127.0.0.1:11211');
-    var cookies = cookie.parse(socket.headers.cookie);
+    var socketId     = ;
+    var memcached    = new Memcached('127.0.0.1:11211');
+    var cookies      = cookie.parse(socket.headers.cookie);
     if (!cookies.hasOwnProperty('oto_sexy')) {
         return callback(null, false);
     };
@@ -42,20 +43,19 @@ io.set('authorization', function(socket, callback){
                 return;
             };
             if (rows.length == 1) {
-                onlineUsers[rows[0]['id']]      = {};
-                onlineUsers[rows[0]['id']].name = rows[0]['username'];
-                return callback(rows[0]['id'], true);
+                onlineUsers[socketId]      = {};
+                onlineUsers[socketId].name = rows[0]['username'];
+                return callback(null, true);
             };
             return callback(null, false);
         });
         return;
     };
-    onlineUsers[ServerSession.__id] = {};
-    onlineUsers[ServerSession.__id].name = ServerSession.username;
-    return callback(ServerSession.__id, true);
+    onlineUsers[socketId] = {};
+    onlineUsers[socketId].name = ServerSession.username;
+    return callback(null, true);
 });
 io.on('connection', function(socket){
-    return;
     socket.on('addRoom', function(data){
         flag = false;
         for (var i = 0; i < groups.length; i++) {
@@ -66,16 +66,16 @@ io.on('connection', function(socket){
         };
         if (flag) {
             socket.join(data.roomName);
-            console.log(onlineUsers[socket.__id]);
-            onlineUsers[socket.__id].roomName = data.roomName;
+            console.log(onlineUsers[socket.id]);
+            onlineUsers[socket.id].roomName = data.roomName;
         }
         else{
             socket.emit('exp', errCodes['GROUP_NOT_FOUND']);
         }
     });
     socket.on('disconnect', function(){
-        if (onlineUsers.hasOwnProperty(socket.__id)) {
-            delete onlineUsers[socket.__id];
+        if (onlineUsers.hasOwnProperty(socket.id)) {
+            delete onlineUsers[socket.id];
             io.emit('logout', null);
         };
     });
@@ -90,8 +90,8 @@ io.on('connection', function(socket){
         for (var key in obj) {
             obj[key] = xss(obj[key], xssOption);
         };
-        obj.userName = onlineUsers[socket.__id].name;
-        io.sockets.in(onlineUsers[socket.__id].roomName).emit('message', obj);
+        obj.userName = onlineUsers[socket.id].name;
+        io.sockets.in(onlineUsers[socket.id].roomName).emit('message', obj);
     });
 });
 io.listen(3000);
