@@ -64,7 +64,6 @@ io.on('connection', function(socket){
         };
         if (flag) {
             socket.join(data.roomName);
-            console.log(onlineUsers[socket.id]);
             onlineUsers[socket.id].roomName = data.roomName;
         }
         else{
