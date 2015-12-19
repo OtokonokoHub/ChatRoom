@@ -24,7 +24,7 @@ io.set('authorization', function(socket, callback){
     };
     var ClientSession = cookies.oto_sexy;
     var ServerSession = memcached.get('memc.sess.key.' + ClientSession);
-    if (!ServerSession || !ServerSession.hasOwnProperty('__id') || !ServerSession.hasOwnProperty('username')) {
+    if (!ServerSession || !ServerSession.hasOwnProperty('__id') || !ServerSession.hasOwnProperty('nick')) {
         if (!cookies.hasOwnProperty('_identity')) {
             return callback(null, false);
         };
@@ -35,14 +35,14 @@ io.set('authorization', function(socket, callback){
         };
         var connection = mysql.createConnection(mysqlConfig);
         var result     = false;
-        var query      = connection.query('SELECT username,id FROM `user` WHERE id = ? AND auth_key = ?', [IdentityCookie[0], IdentityCookie[1]], function(err, rows){
+        var query      = connection.query('SELECT nick,id FROM `user` WHERE id = ? AND auth_key = ?', [IdentityCookie[0], IdentityCookie[1]], function(err, rows){
             if (err) {
                 console.log(err);
                 return callback(null, false);
             };
             if (rows.length == 1) {
                 onlineUsers[socketId]      = {};
-                onlineUsers[socketId].name = rows[0]['username'];
+                onlineUsers[socketId].name = rows[0]['nick'];
                 return callback(null, true);
             };
             return callback(null, false);
@@ -50,7 +50,7 @@ io.set('authorization', function(socket, callback){
         return;
     };
     onlineUsers[socketId] = {};
-    onlineUsers[socketId].name = ServerSession.username;
+    onlineUsers[socketId].name = ServerSession.nick;
     return callback(null, true);
 });
 io.on('connection', function(socket){
@@ -87,7 +87,7 @@ io.on('connection', function(socket){
         for (var key in obj) {
             obj[key] = xss(obj[key], xssOption);
         };
-        obj.userName = onlineUsers[socket.id].name;
+        obj.nick = onlineUsers[socket.id].name;
         io.sockets.in(onlineUsers[socket.id].roomName).emit('message', obj);
     });
 });
