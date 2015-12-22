@@ -53,7 +53,7 @@ io.set('authorization', function(socket, callback){
                     };
                     return callback(null, false);
                 });
-            }
+            });
             return callback(null, false);
         };
         onlineUsers[socketId] = {};
