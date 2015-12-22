@@ -6,6 +6,7 @@ var Memcached   = require('memcached');
 var groups      = require('./groups.json');
 var errCodes    = require('./error_code.json');
 var mysqlConfig = require('./mysql.json');
+var pool        = mysql.createPool(mysqlConfig);
 var onlineUsers = {};
 var xssOption   ={
     whiteList:{
@@ -15,43 +16,51 @@ var xssOption   ={
 };
                                 
 io.set('authorization', function(socket, callback){
-    var responseHead = socket.res._header;
-    var socketId     = ;
+    var socketId = socket.res._header.split("\n")[5].split(" ")[1].split("=")[1].trim();
     var memcached    = new Memcached('127.0.0.1:11211');
     var cookies      = cookie.parse(socket.headers.cookie);
+
     if (!cookies.hasOwnProperty('oto_sexy')) {
         return callback(null, false);
     };
     var ClientSession = cookies.oto_sexy;
-    var ServerSession = memcached.get('memc.sess.key.' + ClientSession);
-    if (!ServerSession || !ServerSession.hasOwnProperty('__id') || !ServerSession.hasOwnProperty('nick')) {
-        if (!cookies.hasOwnProperty('_identity')) {
-            return callback(null, false);
-        };
-        var IdentityCookie = cookies._identity;
-        IdentityCookie = JSON.parse(IdentityCookie);
-        if (IdentityCookie.length < 2) {
-            return callback(null, false);
-        };
-        var connection = mysql.createConnection(mysqlConfig);
-        var result     = false;
-        var query      = connection.query('SELECT nick,id FROM `user` WHERE id = ? AND auth_key = ?', [IdentityCookie[0], IdentityCookie[1]], function(err, rows){
-            if (err) {
-                console.log(err);
+    memcached.get('memc.sess.key.' + ClientSession, function(err, ServerSession){
+        if (!ServerSession || !ServerSession.hasOwnProperty('__id') || !ServerSession.hasOwnProperty('nick')) {
+            if (!cookies.hasOwnProperty('_identity')) {
                 return callback(null, false);
             };
-            if (rows.length == 1) {
-                onlineUsers[socketId]      = {};
-                onlineUsers[socketId].name = rows[0]['nick'];
-                return callback(null, true);
+            var IdentityCookie = cookies._identity;
+            IdentityCookie = JSON.parse(IdentityCookie);
+            if (IdentityCookie.length < 2) {
+                return callback(null, false);
             };
+            var result     = false;
+            pool.getConnection(function(err,conn){
+                if (err) {
+                    console.log(err);
+                    return callback(null, false);
+                };
+                var query = conn.query('SELECT nick,id FROM `user` WHERE id = ? AND auth_key = ?', [IdentityCookie[0], IdentityCookie[1]], function(err, rows){
+                    conn.release();
+                    if (err) {
+                        console.log(err);
+                        return callback(null, false);
+                    };
+                    if (rows.length == 1) {
+                        onlineUsers[socketId]      = {};
+                        onlineUsers[socketId].name = rows[0]['nick'];
+                        return callback(null, true);
+                    };
+                    return callback(null, false);
+                });
+            }
             return callback(null, false);
-        });
-        return;
-    };
-    onlineUsers[socketId] = {};
-    onlineUsers[socketId].name = ServerSession.nick;
-    return callback(null, true);
+        };
+        onlineUsers[socketId] = {};
+        onlineUsers[socketId].name = ServerSession.nick;
+        return callback(null, true);
+    });
+    
 });
 io.on('connection', function(socket){
     socket.on('addRoom', function(data){
